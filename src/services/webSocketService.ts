@@ -1,34 +1,46 @@
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import {Client, IMessage} from '@stomp/stompjs';
 
-const SOCKET_URL = 'http://localhost:8080/ws/tasks';
+const SOCKET_URL = 'ws://localhost:8080/ws/tasks'; // native ws endpoint (Spring WSConfig: reg.addEndpoint(...))
 
 const client = new Client({
   brokerURL: SOCKET_URL,
-  connectHeaders: {},
-  debug: (str) => console.log(str),
   reconnectDelay: 5000,
   heartbeatIncoming: 4000,
   heartbeatOutgoing: 4000,
-  webSocketFactory: () => new SockJS(SOCKET_URL),
+  debug: (msg) => console.log('[WS]', msg),
 });
 
-export const connectWebSocket = (onMessage: (message: any) => void) => {
+let isConnected = false;
+
+export const connectWebSocket = (onMessage: (event: { type: string; data: any }) => void) => {
+  if (isConnected) return;
+
   client.onConnect = () => {
-    console.log('Connected to WebSocket');
-    client.subscribe('/topic/task-updates', (message) => {
-      if (message.body) {
-        const parsedMessage = JSON.parse(message.body);
-        onMessage(parsedMessage);
+    console.log('[WS] Connected');
+    isConnected = true;
+
+    client.subscribe('/topic/task-updates', (message: IMessage) => {
+      try {
+        const parsed = JSON.parse(message.body);
+        console.log('[WS] Event:', parsed);
+        onMessage(parsed);
+      } catch (err) {
+        console.error('[WS] Failed to parse message', err);
       }
     });
+  };
+
+  client.onDisconnect = () => {
+    isConnected = false;
+    console.log('[WS] Disconnected');
   };
 
   client.activate();
 };
 
 export const disconnectWebSocket = () => {
-  if (client.connected) {
+  if (client && client.active) {
     client.deactivate();
+    isConnected = false;
   }
 };
