@@ -1,6 +1,5 @@
-
-import { BadRequestResponse, ErrorResponse, TaskDoc, TaskRequest, TaskStatus } from "@/types/task";
-import { toast } from "sonner";
+import {BadRequestResponse, TaskDoc, TaskRequest} from "@/types/task";
+import {toast} from "sonner";
 
 const API_URL = "http://localhost:8080/api";
 const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciJ9.V7VdhaU778lzNeNfcsbB_eGyJ-MJcPvNUHwS9MLJWuc";
@@ -25,13 +24,17 @@ export async function fetchTasks(status?: string) {
     if (status) {
       url += `?status=${status}`;
     }
-    
-    const response = await fetchWithAuth(url);
-    
+
+    const response = await fetchWithAuth(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     if (!response.ok) {
       throw new Error(`Failed to fetch tasks: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -43,12 +46,16 @@ export async function fetchTasks(status?: string) {
 
 export async function fetchTask(id: number): Promise<TaskDoc> {
   try {
-    const response = await fetchWithAuth(`${API_URL}/tasks/${id}`);
-    
+    const response = await fetchWithAuth(`${API_URL}/tasks/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     if (!response.ok) {
       throw new Error(`Failed to fetch task: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -62,9 +69,12 @@ export async function createTask(task: TaskRequest): Promise<TaskDoc> {
   try {
     const response = await fetchWithAuth(`${API_URL}/tasks`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(task),
     });
-    
+
     if (!response.ok) {
       if (response.status === 400) {
         const errorData: BadRequestResponse = await response.json();
@@ -72,7 +82,7 @@ export async function createTask(task: TaskRequest): Promise<TaskDoc> {
       }
       throw new Error(`Failed to create task: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -86,9 +96,12 @@ export async function updateTask(id: number, task: TaskRequest): Promise<TaskDoc
   try {
     const response = await fetchWithAuth(`${API_URL}/tasks/${id}`, {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(task),
     });
-    
+
     if (!response.ok) {
       if (response.status === 400) {
         const errorData: BadRequestResponse = await response.json();
@@ -96,7 +109,7 @@ export async function updateTask(id: number, task: TaskRequest): Promise<TaskDoc
       }
       throw new Error(`Failed to update task: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -113,13 +126,13 @@ export async function patchTaskStatus(id: number, status: string): Promise<TaskD
       headers: {
         'Content-Type': 'application/merge-patch+json',
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({status}),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to update task status: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -133,8 +146,11 @@ export async function deleteTask(id: number): Promise<void> {
   try {
     const response = await fetchWithAuth(`${API_URL}/tasks/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to delete task: ${response.statusText}`);
     }
