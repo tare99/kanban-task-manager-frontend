@@ -1,4 +1,3 @@
-
 import { BadRequestResponse, ErrorResponse, TaskDoc, TaskRequest, TaskStatus } from "@/types/task";
 import { toast } from "sonner";
 
@@ -11,6 +10,7 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const headers = {
     ...options.headers,
     'Authorization': `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json',
   };
 
   return fetch(url, {
@@ -28,6 +28,14 @@ export async function fetchTasks(status?: string) {
     
     const response = await fetchWithAuth(url);
     
+    // Check if the response is JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("Received non-JSON response:", text);
+      throw new Error("Backend server returned an invalid response. Please ensure the server is running and accessible.");
+    }
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch tasks: ${response.statusText}`);
     }
@@ -36,7 +44,11 @@ export async function fetchTasks(status?: string) {
     return data;
   } catch (error) {
     console.error("Error fetching tasks:", error);
-    toast.error("Failed to fetch tasks");
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      toast.error("Unable to connect to the backend server. Please ensure it is running at http://localhost:8080");
+    } else {
+      toast.error(error instanceof Error ? error.message : "Failed to fetch tasks");
+    }
     throw error;
   }
 }
