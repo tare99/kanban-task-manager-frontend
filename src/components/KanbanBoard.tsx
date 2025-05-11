@@ -21,12 +21,17 @@ export function KanbanBoard() {
     setIsLoading(true);
     try {
       const response = await fetchTasks();
+      console.log("API Response:", response); // Debug log
+      
       // Handle both possible response formats from the API
       if (response._embedded && response._embedded.taskList) {
         setTasks(response._embedded.taskList);
+      } else if (response._embedded && response._embedded.tasks) {
+        setTasks(response._embedded.tasks);
       } else if (Array.isArray(response)) {
         setTasks(response);
       } else {
+        console.warn("Unexpected response format:", response);
         setTasks([]);
       }
     } catch (error) {
@@ -122,7 +127,7 @@ export function KanbanBoard() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-kanban-purple-dark">Kanban Board</h1>
+        <h1 className="text-2xl font-bold text-kanban-purple-dark">Kanban Board {tasks.length > 0 ? `(${tasks.length} tasks)` : ''}</h1>
         <Button 
           className="bg-kanban-purple hover:bg-kanban-purple-dark"
           onClick={() => {
