@@ -21,9 +21,17 @@ export function KanbanBoard() {
     setIsLoading(true);
     try {
       const response = await fetchTasks();
-      setTasks(Array.isArray(response) ? response : response._embedded?.taskList || []);
+      // Handle both possible response formats from the API
+      if (response._embedded && response._embedded.taskList) {
+        setTasks(response._embedded.taskList);
+      } else if (Array.isArray(response)) {
+        setTasks(response);
+      } else {
+        setTasks([]);
+      }
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      setTasks([]);
     } finally {
       setIsLoading(false);
     }

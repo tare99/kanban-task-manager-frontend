@@ -6,10 +6,10 @@ import { AlertCircle } from "lucide-react";
 const Index = () => {
   return (
     <div className="container mx-auto py-6 px-4">
-      <Alert className="mb-6 bg-amber-50 border-amber-200">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
-          Using mock API due to CORS restrictions with localhost backend.
+      <Alert className="mb-6 bg-blue-50 border-blue-200">
+        <AlertCircle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          Connected to backend API at http://localhost:8080
         </AlertDescription>
       </Alert>
       <KanbanBoard />
