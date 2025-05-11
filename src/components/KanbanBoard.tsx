@@ -1,190 +1,118 @@
-
-import { useEffect, useState } from "react";
-import { TaskDoc, TaskRequest, TaskStatus } from "@/types/task";
-import { createTask, deleteTask, fetchTasks, updateTask } from "@/services/taskService";
-import { KanbanColumn } from "./KanbanColumn";
-import { TaskDialog } from "./TaskDialog";
-import { ConfirmDialog } from "./ConfirmDialog";
-import { Button } from "./ui/button";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
+import React, {useEffect, useState} from 'react';
+import {connectWebSocket, disconnectWebSocket} from '@/services/webSocketService';
+import {TaskDoc, TaskRequest} from '@/types/task';
+import {
+  createTask,
+  deleteTask,
+  fetchTasks,
+  patchTaskStatus,
+  updateTask
+} from '@/services/taskService';
+import {toast} from 'sonner';
 
 export function KanbanBoard() {
   const [tasks, setTasks] = useState<TaskDoc[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentTask, setCurrentTask] = useState<TaskDoc | undefined>(undefined);
-  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+
+  // WebSocket message handler
+  const handleWebSocketMessage = (message: any) => {
+    if (message.type === 'PATCHED') {
+      setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+              task.id === message.payload.id ? {...task, ...message.payload} : task
+          )
+      );
+    } else if (message.type === 'CREATED') {
+      setTasks((prevTasks) => [...prevTasks, message.payload]);
+    } else if (message.type === 'DELETED') {
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== message.payload.id));
+    }
+  };
 
   const fetchAllTasks = async () => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const response = await fetchTasks();
-      console.log("API Response:", response); // Debug log
-      
-      // Handle both possible response formats from the API
-      if (response._embedded && response._embedded.taskList) {
-        setTasks(response._embedded.taskList);
-      } else if (response._embedded && response._embedded.tasks) {
-        setTasks(response._embedded.tasks);
-      } else if (Array.isArray(response)) {
-        setTasks(response);
-      } else {
-        console.warn("Unexpected response format:", response);
-        setTasks([]);
-      }
+      setTasks(response);
     } catch (error) {
-      console.error("Error fetching tasks:", error);
-      setTasks([]);
+      console.error('Error fetching tasks:', error);
+      toast.error('Failed to fetch tasks');
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAllTasks();
-  }, []);
-
   const handleCreateTask = async (taskData: TaskRequest) => {
     try {
-      await createTask(taskData);
-      toast.success("Task created successfully");
-      fetchAllTasks();
+      const newTask = await createTask(taskData);
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+      toast.success('Task created successfully');
     } catch (error) {
-      console.error("Error creating task:", error);
+      console.error('Error creating task:', error);
     }
   };
 
-  const handleUpdateTask = async (taskData: TaskRequest) => {
-    if (!currentTask) return;
-    
+  const handleUpdateTask = async (id: number, taskData: TaskRequest) => {
     try {
-      await updateTask(currentTask.id, taskData);
-      toast.success("Task updated successfully");
-      fetchAllTasks();
+      const updatedTask = await updateTask(id, taskData);
+      setTasks((prevTasks) =>
+          prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      );
+      toast.success('Task updated successfully');
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error('Error updating task:', error);
     }
   };
 
-  const handleSaveTask = async (taskData: TaskRequest) => {
-    if (currentTask) {
-      await handleUpdateTask(taskData);
-    } else {
-      await handleCreateTask(taskData);
-    }
-  };
-
-  const handleEditTask = (task: TaskDoc) => {
-    setCurrentTask(task);
-    setIsTaskDialogOpen(true);
-  };
-
-  const handleDeleteClick = (id: number) => {
-    setTaskToDelete(id);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (taskToDelete === null) return;
-    
+  const handlePatchTaskStatus = async (id: number, status: string) => {
     try {
-      await deleteTask(taskToDelete);
-      toast.success("Task deleted successfully");
-      fetchAllTasks();
+      const updatedTask = await patchTaskStatus(id, status);
+      setTasks((prevTasks) =>
+          prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      );
+      toast.success('Task status updated successfully');
     } catch (error) {
-      console.error("Error deleting task:", error);
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setTaskToDelete(null);
+      console.error('Error patching task status:', error);
     }
   };
 
-  const handleCloseTaskDialog = () => {
-    setIsTaskDialogOpen(false);
-    setCurrentTask(undefined);
+  const handleDeleteTask = async (id: number) => {
+    try {
+      await deleteTask(id);
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+      toast.success('Task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
-  const filterTasksByStatus = (status: TaskStatus): TaskDoc[] => {
-    return tasks.filter(task => task.status === status);
-  };
+  useEffect(() => {
+    fetchAllTasks();
 
-  const todoTasks = filterTasksByStatus("TO_DO");
-  const inProgressTasks = filterTasksByStatus("IN_PROGRESS");
-  const doneTasks = filterTasksByStatus("DONE");
+    // Connect WebSocket
+    connectWebSocket(handleWebSocketMessage);
+
+    return () => {
+      // Disconnect WebSocket
+      disconnectWebSocket();
+    };
+  }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[70vh]">
-        <div className="text-center">
-          <div className="animate-pulse text-kanban-purple">Loading Kanban board...</div>
-        </div>
-      </div>
-    );
+    return <div>Loading tasks...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-kanban-purple-dark">Kanban Board {tasks.length > 0 ? `(${tasks.length} tasks)` : ''}</h1>
-        <Button 
-          className="bg-kanban-purple hover:bg-kanban-purple-dark"
-          onClick={() => {
-            setCurrentTask(undefined);
-            setIsTaskDialogOpen(true);
-          }}
-        >
-          <Plus className="mr-1 h-4 w-4" /> New Task
-        </Button>
+      <div>
+        {tasks.map((task) => (
+            <div key={task.id}>
+              <h3>{task.title}</h3>
+              <p>{task.description}</p>
+              <p>Status: {task.status}</p>
+              <button onClick={() => handlePatchTaskStatus(task.id, 'DONE')}>Mark as Done</button>
+              <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
+            </div>
+        ))}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KanbanColumn
-          title="To Do"
-          status="TO_DO"
-          tasks={todoTasks}
-          onEdit={handleEditTask}
-          onDelete={handleDeleteClick}
-          onTaskMoved={fetchAllTasks}
-          count={todoTasks.length}
-        />
-        
-        <KanbanColumn
-          title="In Progress"
-          status="IN_PROGRESS"
-          tasks={inProgressTasks}
-          onEdit={handleEditTask}
-          onDelete={handleDeleteClick}
-          onTaskMoved={fetchAllTasks}
-          count={inProgressTasks.length}
-        />
-        
-        <KanbanColumn
-          title="Done"
-          status="DONE"
-          tasks={doneTasks}
-          onEdit={handleEditTask}
-          onDelete={handleDeleteClick}
-          onTaskMoved={fetchAllTasks}
-          count={doneTasks.length}
-        />
-      </div>
-      
-      <TaskDialog
-        isOpen={isTaskDialogOpen}
-        onClose={handleCloseTaskDialog}
-        onSave={handleSaveTask}
-        task={currentTask}
-      />
-      
-      <ConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Task"
-        description="Are you sure you want to delete this task? This action cannot be undone."
-      />
-    </div>
   );
 }
