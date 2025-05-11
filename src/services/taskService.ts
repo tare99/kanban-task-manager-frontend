@@ -11,7 +11,6 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const headers = {
     ...options.headers,
     'Authorization': `Bearer ${AUTH_TOKEN}`,
-    'Content-Type': 'application/json',
   };
 
   return fetch(url, {
