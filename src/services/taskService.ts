@@ -3,11 +3,23 @@ import { BadRequestResponse, ErrorResponse, TaskDoc, TaskRequest } from "@/types
 import { toast } from "sonner";
 
 const API_URL = "http://localhost:8080/api/tasks";
+const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciJ9.V7VdhaU778lzNeNfcsbB_eGyJ-MJcPvNUHwS9MLJWuc";
+
+// Helper function to add authorization headers to fetch requests
+const fetchWithAuth = (url: string, options: RequestInit = {}) => {
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      "Authorization": `Bearer ${AUTH_TOKEN}`
+    }
+  });
+};
 
 export async function fetchTasks(status?: string) {
   try {
     const url = status ? `${API_URL}?status=${status}` : API_URL;
-    const response = await fetch(url);
+    const response = await fetchWithAuth(url);
     
     if (!response.ok) {
       const errorData = await response.json() as ErrorResponse;
@@ -24,7 +36,7 @@ export async function fetchTasks(status?: string) {
 
 export async function fetchTask(id: number): Promise<TaskDoc> {
   try {
-    const response = await fetch(`${API_URL}/${id}`);
+    const response = await fetchWithAuth(`${API_URL}/${id}`);
     
     if (!response.ok) {
       const errorData = await response.json() as ErrorResponse;
@@ -41,7 +53,7 @@ export async function fetchTask(id: number): Promise<TaskDoc> {
 
 export async function createTask(task: TaskRequest): Promise<TaskDoc> {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetchWithAuth(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +82,7 @@ export async function createTask(task: TaskRequest): Promise<TaskDoc> {
 
 export async function updateTask(id: number, task: TaskRequest): Promise<TaskDoc> {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -99,7 +111,7 @@ export async function updateTask(id: number, task: TaskRequest): Promise<TaskDoc
 
 export async function patchTaskStatus(id: number, status: string): Promise<TaskDoc> {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_URL}/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/merge-patch+json",
@@ -122,7 +134,7 @@ export async function patchTaskStatus(id: number, status: string): Promise<TaskD
 
 export async function deleteTask(id: number): Promise<void> {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_URL}/${id}`, {
       method: "DELETE",
     });
     
