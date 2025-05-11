@@ -78,7 +78,6 @@ export function KanbanBoard() {
     try {
       await createTask(taskData);
       toast.success("Task created successfully");
-      fetchAllTasks();
     } catch (error) {
       console.error("Error creating task:", error);
     }
@@ -90,7 +89,6 @@ export function KanbanBoard() {
     try {
       await updateTask(currentTask.id, taskData);
       toast.success("Task updated successfully");
-      fetchAllTasks();
     } catch (error) {
       console.error("Error updating task:", error);
     }
@@ -120,7 +118,6 @@ export function KanbanBoard() {
     try {
       await deleteTask(taskToDelete);
       toast.success("Task deleted successfully");
-      fetchAllTasks();
     } catch (error) {
       console.error("Error deleting task:", error);
     } finally {

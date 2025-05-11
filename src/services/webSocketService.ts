@@ -19,7 +19,7 @@ export const connectWebSocket = (onMessage: (event: { type: string; data: any })
     console.log('[WS] Connected');
     isConnected = true;
 
-    client.subscribe('/topic/task-updates', (message: IMessage) => {
+    client.subscribe('/topic/tasks', (message: IMessage) => {
       try {
         const parsed = JSON.parse(message.body);
         console.log('[WS] Event:', parsed);
