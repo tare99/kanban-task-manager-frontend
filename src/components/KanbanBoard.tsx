@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { TaskDoc, TaskRequest, TaskStatus } from "@/types/task";
 import { createTask, deleteTask, fetchTasks, updateTask } from "@/services/taskService";
@@ -15,13 +16,12 @@ export function KanbanBoard() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<TaskDoc | undefined>(undefined);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchAllTasks = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const response = await fetchTasks();
+      console.log("API Response:", response); // Debug log
       
       // Handle both possible response formats from the API
       if (response._embedded && response._embedded.taskList) {
@@ -36,7 +36,6 @@ export function KanbanBoard() {
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
-      setError(error instanceof Error ? error.message : "Failed to fetch tasks");
       setTasks([]);
     } finally {
       setIsLoading(false);
@@ -120,22 +119,6 @@ export function KanbanBoard() {
       <div className="flex items-center justify-center h-[70vh]">
         <div className="text-center">
           <div className="animate-pulse text-kanban-purple">Loading Kanban board...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-[70vh]">
-        <div className="text-center space-y-4">
-          <div className="text-red-500 font-semibold">{error}</div>
-          <Button 
-            onClick={fetchAllTasks}
-            className="bg-kanban-purple hover:bg-kanban-purple-dark"
-          >
-            Retry
-          </Button>
         </div>
       </div>
     );
