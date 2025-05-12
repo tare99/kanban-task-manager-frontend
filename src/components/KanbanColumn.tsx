@@ -40,12 +40,13 @@ export function KanbanColumn({
     
     const taskId = e.dataTransfer.getData("taskId");
     const currentStatus = e.dataTransfer.getData("taskStatus");
-    
+    const version = e.dataTransfer.getData("version");
+
     // Don't do anything if dropping back to the same column
     if (currentStatus === status) return;
     
     try {
-      await patchTaskStatus(parseInt(taskId), status);
+      await patchTaskStatus(parseInt(taskId), status, parseInt(version));
       onTaskMoved();
     } catch (error) {
       console.error("Failed to move task:", error);

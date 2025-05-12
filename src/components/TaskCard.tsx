@@ -24,6 +24,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('taskId', task.id.toString());
     e.dataTransfer.setData('taskStatus', task.status);
+    e.dataTransfer.setData('version', String(task.version));
     setIsDragging(true);
     setTimeout(() => {
       e.currentTarget.classList.add('dragging-card');

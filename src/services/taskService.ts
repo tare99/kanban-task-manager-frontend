@@ -119,14 +119,14 @@ export async function updateTask(id: number, task: TaskRequest): Promise<TaskDoc
   }
 }
 
-export async function patchTaskStatus(id: number, status: string): Promise<TaskDoc> {
+export async function patchTaskStatus(id: number, status: string, version: number): Promise<TaskDoc> {
   try {
     const response = await fetchWithAuth(`${API_URL}/tasks/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/merge-patch+json',
       },
-      body: JSON.stringify({status}),
+      body: JSON.stringify({status, version}),
     });
 
     if (!response.ok) {
