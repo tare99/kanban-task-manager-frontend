@@ -1,17 +1,16 @@
-
 export type TaskStatus = "TO_DO" | "IN_PROGRESS" | "DONE";
 export type TaskPriority = "LOW" | "MED" | "HIGH";
 
 export interface TaskRequest {
   title: string;
-  description?: string; 
+  description?: string;
   status: TaskStatus;
   priority: TaskPriority;
+  version: number;
 }
 
 export interface TaskDoc extends TaskRequest {
   id: number;
-  version: number;
   _links: LinkDoc;
 }
 

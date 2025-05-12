@@ -61,6 +61,7 @@ export function TaskDialog({ isOpen, onClose, onSave, task }: TaskDialogProps) {
         description: description.trim() || undefined,
         status,
         priority,
+        version: task?.version ?? 0,
       });
       
       onClose();
